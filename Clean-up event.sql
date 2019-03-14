@@ -9,9 +9,6 @@ CREATE TABLE IF NOT EXISTS event_log(
 	PRIMARY KEY (`id`)
 );
 
-INSERT INTO event_log(event_name,count_decisions,count_p_performance,start/end)
-VALUES (automatic_clean_up,(SELECT COUNT(id) from forecast_order_decisions ;),(SELECT COUNT(id) from automatic_supply_decisions_product_performance),(SELECT CURDATE();))
-
 
 CREATE EVENT automatic_clean_up
     ON SCHEDULE 
@@ -21,8 +18,10 @@ CREATE EVENT automatic_clean_up
 	COMMENT 'Clears out table each 10 seconds.'
 	DO BEGIN
 
-   SET foreign_key_checks = 0;
+SET foreign_key_checks = 0;
 
+INSERT INTO event_log(event_name,count_decisions,count_p_performance,start/end)
+VALUES (automatic_clean_up,(SELECT COUNT(id) from forecast_order_decisions),(SELECT COUNT(id) from automatic_supply_decisions_product_performance),(SELECT CURDATE()));
 
 SET @ref = (SELECT fod.id FROM emag_scm_dante.forecast_order_decisions fod WHERE fod.created  curdate()-3 ORDER BY fod.id DESC LIMIT 1);
  
@@ -46,6 +45,8 @@ AND id  @ref
 ORDER BY id ASC
 LIMIT 100000;
 
+INSERT INTO event_log(event_name,count_decisions,count_p_performance,start/end)
+VALUES (automatic_clean_up,(SELECT COUNT(id) from forecast_order_decisions),(SELECT COUNT(id) from automatic_supply_decisions_product_performance),(SELECT CURDATE()));																		    
       
 SET foreign_key_checks = 1;
 END; 
