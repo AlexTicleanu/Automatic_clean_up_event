@@ -1,5 +1,18 @@
 DELIMITER GO
 
+CREATE TABLE IF NOT EXISTS event_log(
+	'id' int(11) NOT NULL AUTO_INCREMENT,
+	'event_name' VARCHAR(128) NOT NULL,
+	'count_decisions' int(11) DEFAULT NULL, 
+	'count_p_performance' int(11) DEFAULT NULL, 
+	'start/end' TIMESTAMP NULL DEFAULT NULL,
+	PRIMARY KEY (`id`)
+);
+
+INSERT INTO event_log(event_name,count_decisions,count_p_performance,start/end)
+VALUES (automatic_clean_up,(SELECT COUNT(id) from forecast_order_decisions ;),(SELECT COUNT(id) from automatic_supply_decisions_product_performance),(SELECT CURDATE();))
+
+
 CREATE EVENT automatic_clean_up
     ON SCHEDULE 
 	EVERY 1 DAY
