@@ -1,5 +1,7 @@
 DELIMITER GO
 
+#CREATE A TABLE FOR THE EVENT TO LOG
+
 CREATE TABLE IF NOT EXISTS event_log(
 	`id` int(11) NOT NULL AUTO_INCREMENT,
 	`event_name` VARCHAR(128) NOT NULL,
@@ -10,7 +12,7 @@ CREATE TABLE IF NOT EXISTS event_log(
 	PRIMARY KEY (`id`)
 );
 
-
+#CREATE THE EVENT
 CREATE EVENT automatic_clean_up
     ON SCHEDULE 
 	EVERY 1 DAY
@@ -21,15 +23,18 @@ CREATE EVENT automatic_clean_up
 
 SET foreign_key_checks = 0;
 
+
+#INSERT IN ABOVE TABLE
 SET @fod_before = (SELECT COUNT(id) from forecast_order_decisions);
 SET @aspp_before = (SELECT COUNT(id) from automatic_supply_decisions_product_performance);
 
 INSERT INTO event_log(`event_name`,`state`,`count_decisions`,`count_p_performance`,`start/end`)
 VALUES ('automatic_clean_up','start',@fod_before,@aspp_before,(SELECT TIMESTAMP()));
 
+#SET THE REFERENCE VARIABLE							       
 SET @ref = (SELECT fod.id FROM forecast_order_decisions fod WHERE fod.created <= curdate()-3 ORDER BY fod.id DESC LIMIT 1);
  
-
+#DELETE PRODUCT PERFORMANCE FOR DECISIONS
 DELETE dpp FROM automatic_supply_decisions_product_performance dpp
 JOIN (
     SELECT fod.id
@@ -40,7 +45,7 @@ JOIN (
     ORDER BY fod.id
 ) sel ON dpp.forecast_order_decision_id = sel.id;
 
-
+#DELETE DECISIONS
 DELETE FROM forecast_order_decisions
 WHERE 
 status = 'deleted'
@@ -48,7 +53,7 @@ AND id <= @ref
 ORDER BY id ASC;
 
 
-
+#INSERT INTRO event_log AGAIN FOR VALUES AFTER EVENT IS DONE
 SET@fod_after = (SELECT COUNT(id) from forecast_order_decisions);
 SET@aspp_after = (SELECT COUNT(id) from automatic_supply_decisions_product_performance);
 
