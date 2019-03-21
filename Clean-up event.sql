@@ -32,10 +32,8 @@ INSERT INTO event_log(`event_name`,`state`,`count_decisions`,`count_p_performanc
 VALUES ('automatic_clean_up','start',@fod_before,@aspp_before,(SELECT NOW()));
 
 #SET THE REFERENCE VARIABLE							       
-SET @ref = (SELECT fod.id FROM forecast_order_decisions fod
-					 WHERE fod.created <= curdate()-3 
-						ORDER BY fod.id DESC 
-							LIMIT 1);
+SET @ref = (SELECT MAX(fod.id) FROM forecast_order_decisions fod
+					 WHERE fod.created <= curdate()-3);
  
 #DELETE PRODUCT PERFORMANCE FOR DECISIONS
 DELETE dpp FROM automatic_supply_decisions_product_performance dpp
