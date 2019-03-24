@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS event_log(
 	`count_decisions` int(11) DEFAULT NULL, 
 	`count_p_performance` int(11) DEFAULT NULL, 
 	`start/end` TIMESTAMP NULL DEFAULT NULL,
+	`comments` VARCHAR(128) DEFAULT NULL,
 	PRIMARY KEY (`id`)
 );
 
@@ -32,8 +33,21 @@ INSERT INTO event_log(`event_name`,`state`,`count_decisions`,`count_p_performanc
 VALUES ('automatic_clean_up','start',@fod_before,@aspp_before,(SELECT NOW()));
 
 #SET THE REFERENCE VARIABLE							       
-SET @ref = (SELECT MAX(fod.id) FROM forecast_order_decisions fod
-					 WHERE fod.created <= curdate()-3);
+CASE
+	WHEN DAYOFWEEK(CURDATE()) = 7 THEN 
+	 	SET @ref = (SELECT MAX(fod.id) FROM forecast_order_decisions fod
+					 WHERE fod.created <= CURDATE()-4)
+	   INSERT INTO event_log(`comments`) VALUES ("4 days of decisions")
+	WHEN DAYOFWEEK(CURDATE()) IN (1,2,3) THEN 
+	 	SET @ref = (SELECT MAX(fod.id) FROM forecast_order_decisions fod
+					 WHERE fod.created <= CURDATE()-5)
+		INSERT INTO event_log(`comments`) VALUES ("5 days of decisions")
+	WHEN DAYOFWEEK(CURDATE()) IN (4,5,6) THEN 
+	 	SET @ref = (SELECT MAX(fod.id) FROM forecast_order_decisions fod
+					 WHERE fod.created <= CURDATE()-3)
+		INSERT INTO event_log(`comments`) VALUES ("3 days of decisions")
+	ELSE INSERT INTO event_log(`comments`) VALUES ("nothing has been deleted")
+END
  
 #DELETE PRODUCT PERFORMANCE FOR DECISIONS
 DELETE dpp FROM automatic_supply_decisions_product_performance dpp
