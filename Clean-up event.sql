@@ -47,7 +47,7 @@ VALUES ('automatic_clean_up','start',@fod_before,@aspp_before,(SELECT NOW()));
 					 WHERE fod.created <= CURDATE()-3)
 		INSERT INTO event_log(`comments`) VALUES ("3 days of decisions")
 	ELSE INSERT INTO event_log(`comments`) VALUES ("nothing has been deleted")
-END)
+END);
  
 #DELETE PRODUCT PERFORMANCE FOR DECISIONS
 DELETE dpp FROM automatic_supply_decisions_product_performance dpp
@@ -73,7 +73,9 @@ SET@fod_after = (SELECT COUNT(id) from forecast_order_decisions);
 SET@aspp_after = (SELECT COUNT(id) from automatic_supply_decisions_product_performance);
 
 INSERT INTO event_log(`event_name`,`state`,`count_decisions`,`count_p_performance`,`start/end`)
-VALUES ('automatic_clean_up','stop',@fod_after,@aspp_after,(SELECT NOW()));																		    
+VALUES ('automatic_clean_up','stop',@fod_after,@aspp_after,(SELECT NOW()));		
+OPTIMIZE TABLE forecast_order_decisions;
+ANALYZE TABLE forecast_order_decisions;
       
 SET foreign_key_checks = 1;
 END; 
