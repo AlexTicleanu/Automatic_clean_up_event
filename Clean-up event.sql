@@ -1,16 +1,73 @@
-DELIMITER GO
+DELIMITER //
 
 #CREATE A TABLE FOR THE EVENT TO LOG
-
 CREATE TABLE IF NOT EXISTS event_log(
 	`id` int(11) NOT NULL AUTO_INCREMENT,
 	`event_name` VARCHAR(128) NOT NULL,
-	`state` ENUM('start','stop') NOT NULL,
+	`state` ENUM('start','middle','stop') NOT NULL,
 	`count_decisions` int(11) DEFAULT NULL, 
 	`count_p_performance` int(11) DEFAULT NULL, 
 	`start/end` TIMESTAMP NULL DEFAULT NULL,
 	PRIMARY KEY (`id`)
 );
+
+#CREATE PROCEDURE FOD
+CREATE PROCEDURE schedule_delete_fod(IN REF INT)
+BEGIN 
+
+SET @ct = (select MIN(id) from forecast_order_decisions); 
+	WHILE @ct != REF   
+		DO 
+		DELETE FROM forecast_order_decisions
+		WHERE 
+		status = 'deleted'
+		AND id <= REF
+		ORDER BY id ASC 
+		LIMIT 10000;
+		SET @ct = (select MIN(id) from forecast_order_decisions);
+	END WHILE;
+	INSERT INTO event_log(`event_name`,`state`,`count_decisions`,`count_p_performance`,`start/end`) 
+	values ('automatic_clean_up','stop',(SELECT COUNT(id) from forecast_order_decisions),(SELECT COUNT(id) from automatic_supply_decisions_product_performance),(SELECT NOW()));
+END// 
+
+#CREATE PROCEDURE DPP
+
+
+DELIMITER //
+CREATE PROCEDURE schedule_delete_dpp(IN REF INT)
+BEGIN
+
+SET @dt = (SELECT COUNT(dpp.id) FROM automatic_supply_decisions_product_performance dpp
+		INNER JOIN forecast_order_decisions fod on dpp.forecast_order_decision_id = fod.id
+		WHERE date(fod.created) <= curdate()-5
+		AND fod.status = 'deleted' 
+    	ORDER BY fod.id);
+
+	WHILE @dt != 0
+			DO 
+			DELETE dpp FROM automatic_supply_decisions_product_performance dpp
+			JOIN 
+    		(SELECT fod.id
+    		FROM forecast_order_decisions fod
+    		INNER JOIN automatic_supply_decisions_product_performance dpp on fod.id = dpp.`forecast_order_decision_id`
+    		WHERE fod.id <= REF
+    		AND fod.status = 'deleted' 
+    		ORDER BY fod.id
+			LIMIT 10000)
+			sel ON dpp.forecast_order_decision_id = sel.id;
+			SET @dt = (SELECT COUNT(dpp.id) FROM automatic_supply_decisions_product_performance dpp
+				INNER JOIN forecast_order_decisions fod on dpp.forecast_order_decision_id = fod.id
+				WHERE date(fod.created) <= curdate()-5
+				AND fod.status = 'deleted' 
+    			ORDER BY fod.id);
+	END WHILE;
+	
+	INSERT INTO event_log(`event_name`,`state`,`count_decisions`,`count_p_performance`,`start/end`)
+	VALUES ('automatic_clean_up','middle',NULL,(SELECT COUNT(id) from automatic_supply_decisions_product_performance),(SELECT NOW()));
+END//
+
+
+
 
 #CREATE THE EVENT
 CREATE EVENT automatic_clean_up
@@ -25,53 +82,22 @@ SET foreign_key_checks = 0;
 
 
 #INSERT IN ABOVE TABLE
-SET @fod_before = (SELECT COUNT(id) from forecast_order_decisions);
-SET @aspp_before = (SELECT COUNT(id) from automatic_supply_decisions_product_performance);
-
 INSERT INTO event_log(`event_name`,`state`,`count_decisions`,`count_p_performance`,`start/end`)
-VALUES ('automatic_clean_up','start',@fod_before,@aspp_before,(SELECT NOW()));
+VALUES ('automatic_clean_up','start',(SELECT COUNT(id) from forecast_order_decisions),(SELECT COUNT(id) from automatic_supply_decisions_product_performance),(SELECT NOW()));
 
 #SET THE REFERENCE VARIABLE
-SET @ref = 
-	(SELECT
-	 CASE 							       
- 		WHEN DAYOFWEEK(CURDATE()) = 7 THEN (SELECT MAX(fod.id) FROM forecast_order_decisions fod
-					 WHERE fod.created <= CURDATE()-4)
- 		WHEN DAYOFWEEK(CURDATE()) IN (1,2,3) THEN (SELECT MAX(fod.id) FROM forecast_order_decisions fod
-					 WHERE fod.created <= CURDATE()-5)
- 		WHEN DAYOFWEEK(CURDATE()) IN (4,5,6) THEN (SELECT MAX(fod.id) FROM forecast_order_decisions fod
-					 WHERE fod.created <= CURDATE()-3)
-	
-	END);
+SET @ref=(SELECT MAX(fod.id)+1 FROM forecast_order_decisions fod WHERE date(fod.created) <= CURDATE()-5);
+
  
 #DELETE PRODUCT PERFORMANCE FOR DECISIONS
-DELETE dpp FROM automatic_supply_decisions_product_performance dpp
-JOIN (
-    SELECT fod.id
-    FROM forecast_order_decisions fod
-    INNER JOIN automatic_supply_decisions_product_performance dpp on fod.id = dpp.`forecast_order_decision_id`
-    WHERE fod.id <= @ref
-    AND fod.status = 'deleted' 
-    ORDER BY fod.id
-) sel ON dpp.forecast_order_decision_id = sel.id;
+
+CALL schedule_delete_dpp(@ref);
 
 #DELETE DECISIONS
-DELETE FROM forecast_order_decisions
-WHERE 
-status = 'deleted'
-AND id <= @ref
-ORDER BY id ASC;
+						 
+CALL schedule_delete_fod(@ref);
 
-
-#INSERT INTRO event_log AGAIN FOR VALUES AFTER EVENT IS DONE
-SET@fod_after = (SELECT COUNT(id) from forecast_order_decisions);
-SET@aspp_after = (SELECT COUNT(id) from automatic_supply_decisions_product_performance);
-
-INSERT INTO event_log(`event_name`,`state`,`count_decisions`,`count_p_performance`,`start/end`)
-VALUES ('automatic_clean_up','stop',@fod_after,@aspp_after,(SELECT NOW()));		
-OPTIMIZE TABLE forecast_order_decisions;
-ANALYZE TABLE forecast_order_decisions;
       
 SET foreign_key_checks = 1;
 END; 
-GO  
+//
