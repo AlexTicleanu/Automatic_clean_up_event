@@ -5,6 +5,7 @@
 All parts of the Scheduled Event are presented below in the same order as created in the Create Querry. 
 
 **EVENT_LOG TABLE**
+
 For a better tracking we use a new table (event_log) in which every run will have 3 rows containing:
     - an autoincrement id
     - event name
@@ -14,6 +15,7 @@ For a better tracking we use a new table (event_log) in which every run will hav
     - a timestamp for each case 
 
 #Create Query for event_log table
+
 `CREATE TABLE IF NOT EXISTS event_log(
 	`id` int(11) NOT NULL AUTO_INCREMENT,
 	`event_name` VARCHAR(128) NOT NULL,
@@ -27,11 +29,13 @@ For a better tracking we use a new table (event_log) in which every run will hav
  
  
  ***Stored Procedure used***
+ 
 Stored procedure is a declarative statement stored in MYSQL database. 
 When creating a stored procedure the create code should pe executed on the specific database the stored procedure is used, in our case emag_scm_dante. 
 Stored procedure can be find in mysql database 'proc' table and called on demand using statement `call _name of the procedure_(_parameters_);`
 
 **Decisions Product Performance Stored Procedure**
+
 `DELIMITER //
 CREATE PROCEDURE schedule_delete_dpp(IN REF INT)
 BEGIN
