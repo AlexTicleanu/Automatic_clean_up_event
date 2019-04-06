@@ -115,6 +115,51 @@ Deleting in batches inside a stored procedure is possible using a loop, in our c
 After condition in loop is not satisfied anymore, an insert into log table will be triggered having the forecast order decisions count, the product performance count and the timestamp of the moment when the event ends. 
     
  
+ **Create event automatic_clean_up**
+ 
+ ```sql
+ 
+CREATE EVENT automatic_clean_up
+    ON SCHEDULE 
+	EVERY 1 DAY
+   ON COMPLETION PRESERVE
+	DISABLE
+	COMMENT 'Clears out table.'
+	DO BEGIN
+
+SET foreign_key_checks = 0;
+
+
+#INSERT IN ABOVE TABLE
+INSERT INTO event_log(`event_name`,`state`,`count_decisions`,`count_p_performance`,`start/end`)
+VALUES ('automatic_clean_up','start',(SELECT COUNT(id) from forecast_order_decisions),(SELECT COUNT(id) from automatic_supply_decisions_product_performance),(SELECT NOW()));
+
+#SET THE REFERENCE VARIABLE
+SET @ref=(SELECT MAX(fod.id)+1 FROM forecast_order_decisions fod WHERE date(fod.created) <= CURDATE()-5);
+
+ 
+#DELETE PRODUCT PERFORMANCE FOR DECISIONS
+
+CALL schedule_delete_dpp(@ref);
+
+#DELETE DECISIONS
+						 
+CALL schedule_delete_fod(@ref);
+
+      
+SET foreign_key_checks = 1;
+END; 
+//
+ ```
+ 
+ The Scheduled event is created by a small sequence of code containing the `Create event` statement followed by the desired name , in our case 'automatic_clean_up' , the `On Schedule` statement followed by the choosen schedule , the `ON COMPLETION` statement followed by `PRESERVE`/`DROP` according to requirements , `ENABLE` or `DIABLE` being the initial state in which the event will be created. 
+Before writing the body of the event (one or multiple queries) a `DO BEGIN` statement is required ,ended by a `END` statement. 
+Due to foreign key constraints the `SET foreign_key_checks = 0` statement is required before starting the main query inside the event and `SET foreign_key_checks = 1;` at the end of the event. 
+The insert in event_log will initiate the first count for forecast order decision and product performance for later observing.
+ The next part in the event body is setting up the variable for later use in calling the stored procedures presented above. The `@ref` variable is set by the maximum id +1 from forecast order decisions that satisfies the requirement which the created date is smaller than 5 days ago.
+ Now, both stored procedure can work with the same parameter so, calling the stored procedures having the `@ref` parameter will delete batch by batch all forecast order decisions and product performance correspondent from both tables. 
+ 
+  
     
     
 
