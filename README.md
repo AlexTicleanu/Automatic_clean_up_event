@@ -1,6 +1,6 @@
 # Automatic_supply_clean_up_event
 
-**Automatic Supply Clean-up event** is an MYSQL Scheduled Event that delete forecast order decisions older than 5 days and product performance corresponding to them using stored procedures created to delete batches of 10000 rows. 
+**Automatic Supply Clean-up event** is an MYSQL Scheduled Event that deletes forecast order decisions older than 5 days and product performance corresponding to them using stored procedures created to delete batches of 10000 rows. 
 
 All parts of the Scheduled Event are presented below in the same order as created in the Create Querry. 
 
@@ -33,8 +33,8 @@ CREATE TABLE IF NOT EXISTS event_log(
  ***Stored Procedure used***
  
 Stored procedure is a declarative statement stored in MYSQL database. 
-When creating a stored procedure the create code should pe executed on the specific database the stored procedure is used, in our case emag_scm_dante. 
-Stored procedure can be find in mysql database 'proc' table and called on demand using statement `call _name of the procedure_(_parameters_);`
+When creating a stored procedure the 'create code' should be executed on the specific database the stored procedure is used, in our case emag_scm_dante. 
+Stored procedure can be found in mysql database 'proc' table and called on demand using statement `call _name of the procedure_(_parameters_);`
 
 **Decisions Product Performance Stored Procedure**
 
