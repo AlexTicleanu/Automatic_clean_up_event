@@ -16,7 +16,7 @@ For a better tracking we use a new table (event_log) in which every run will hav
 
 #Create Query for event_log table
 
-`CREATE TABLE IF NOT EXISTS event_log(
+```CREATE TABLE IF NOT EXISTS event_log(
 	`id` int(11) NOT NULL AUTO_INCREMENT,
 	`event_name` VARCHAR(128) NOT NULL,
 	`state` ENUM('start','middle','stop') NOT NULL,
@@ -24,7 +24,7 @@ For a better tracking we use a new table (event_log) in which every run will hav
 	`count_p_performance` int(11) DEFAULT NULL, 
 	`start/end` TIMESTAMP NULL DEFAULT NULL,
 	PRIMARY KEY (`id`)
-);`
+);```
 
  
  
@@ -36,7 +36,7 @@ Stored procedure can be find in mysql database 'proc' table and called on demand
 
 **Decisions Product Performance Stored Procedure**
 
-`DELIMITER //
+```DELIMITER //
 CREATE PROCEDURE schedule_delete_dpp(IN REF INT)
 BEGIN
 
@@ -74,7 +74,7 @@ END//`
 
 **Forecast Order Decisions Stored Procedure**
 
-`CREATE PROCEDURE schedule_delete_fod(IN REF INT)
+```CREATE PROCEDURE schedule_delete_fod(IN REF INT)
 BEGIN 
 
 SET @ct = (select MIN(id) from forecast_order_decisions); 
@@ -90,7 +90,7 @@ SET @ct = (select MIN(id) from forecast_order_decisions);
 	END WHILE;
 	INSERT INTO event_log(`event_name`,`state`,`count_decisions`,`count_p_performance`,`start/end`) 
 	values ('automatic_clean_up','stop',(SELECT COUNT(id) from forecast_order_decisions),(SELECT COUNT(id) from automatic_supply_decisions_product_performance),(SELECT NOW()));
-END//`
+END//```
 
     In this case the stored procedure is created with an INT parameter called REF. After the `Begin` keyword , a variable called `@ct` is set having the minimum forecast order decision id stored in it. 
     Deleting in batches inside a stored procedure is possible using a loop, in our case a while loop ,having the variable presented above `@ct` and the parameter `REF` with a comparison operator between them as a condition. 
