@@ -25,7 +25,8 @@ CREATE TABLE IF NOT EXISTS event_log(
 	`count_p_performance` int(11) DEFAULT NULL, 
 	`start/end` TIMESTAMP NULL DEFAULT NULL,
 	PRIMARY KEY (`id`)
-);```
+);
+```
 
  
  
@@ -97,11 +98,11 @@ SET @ct = (select MIN(id) from forecast_order_decisions);
 END//
 ```
 
-    In this case the stored procedure is created with an INT parameter called REF. After the `Begin` keyword , a variable called `@ct` is set having the minimum forecast order decision id stored in it. 
-    Deleting in batches inside a stored procedure is possible using a loop, in our case a while loop ,having the variable presented above `@ct` and the parameter `REF` with a comparison operator between them as a condition. 
-    Due to performance issues a limit `LIMIT 10000` is required on the querry since after every loop the changes are commited on the database. 
+   In this case the stored procedure is created with an INT parameter called REF. After the `Begin` keyword , a variable called `@ct` is set having the minimum forecast order decision id stored in it. 
+   Deleting in batches inside a stored procedure is possible using a loop, in our case a while loop ,having the variable presented above `@ct` and the parameter `REF` with a comparison operator between them as a condition. 
+   Due to performance issues a limit `LIMIT 10000` is required on the querry since after every loop the changes are commited on the database. 
     
-    After condition in loop is not satisfied anymore, an insert into log table will be triggered having the forecast order decisions count, the product performance count and the timestamp of the moment when all event ends. 
+   After condition in loop is not satisfied anymore, an insert into log table will be triggered having the forecast order decisions count, the product performance count and the timestamp of the moment when all event ends. 
     
  
     
