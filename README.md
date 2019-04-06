@@ -74,10 +74,14 @@ END//
 ```
 
 In this case the stored procedure is created with an INT parameter called `REF`. After the `Begin` keyword , a variable called `@dt` is set having the count of decisions product performance with a correspondent in forecast order decision that satisfy the conditions: status deleted and created date smaller than 5 days ago. 
+
 Deleting in batches inside a stored procedure is possible using a loop, in our case a while loop ,having the variable presented above `@dt` not equal to 0 (in that moment all decision product performances are deleted and the while must end). 
+
 The main query inside the while loop is deleting all the product performance with an correspondent in forecast order decision that satisfy the conditions: forecast order decision id must be smaller than the parameter `REF` and the forecast order status must be deleted. 
+
 After a run is completed , variable @dt is getting set again by the initial 'set query' due to the changes processed after each delete and for the loop to end where there is no more lines to delete. 
 Due to performance issues a limit `LIMIT 10000` is required on the querry since after every loop the changes are commited on the database. 
+
 When the process is getting out of the loop, an insert into log table will be triggered having  the product performance count and the timestamp of the moment when this procedure ends.  
 
 
@@ -105,6 +109,7 @@ END//
 ```
 
 In this case the stored procedure is created with an INT parameter called REF. After the `Begin` keyword , a variable called `@ct` is set having the minimum forecast order decision id stored in it. 
+
 Deleting in batches inside a stored procedure is possible using a loop, in our case a while loop ,having the variable presented above `@ct` and the parameter `REF` with a comparison operator between them as a condition.  
     
 After condition in loop is not satisfied anymore, an insert into log table will be triggered having the forecast order decisions count, the product performance count and the timestamp of the moment when the event ends. 
