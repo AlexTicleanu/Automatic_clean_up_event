@@ -21,7 +21,7 @@ SET @ct = (select MIN(id) from forecast_order_decisions);
 		DELETE FROM forecast_order_decisions
 		WHERE 
 		status = 'deleted'
-		AND id <= REF
+		AND id < REF
 		ORDER BY id ASC 
 		LIMIT 10000;
 		SET @ct = (select MIN(id) from forecast_order_decisions);
