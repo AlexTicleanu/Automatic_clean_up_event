@@ -73,9 +73,9 @@ END
 
 In this case the stored procedure is created with an INT parameter called `REF`. After the `Begin` keyword , a variable called `@dt` is set having the count of decisions product performance with a correspondent in forecast order decision that satisfy the conditions: status deleted and created date smaller than 5 days ago. 
 
-Deleting in batches inside a stored procedure is possible using a loop, in our case a while loop ,having the variable presented above `@dt` not equal to 0 (in that moment all decision product performances are deleted and the while must end). 
+Deleting in batches inside a stored procedure is possible using a loop, in our case a while loop ,having the difference variables presented above `@dt - @INO` not equal to 0 (in that moment all decision product performances are deleted and the while must end). 
 
-The main query inside the while loop is deleting all the product performance with an correspondent in forecast order decision that satisfy the conditions: forecast order decision id must be smaller than the parameter `REF` and the forecast order status must be deleted. 
+The main query inside the while loop is deleting all the product performance with an correspondent in forecast order decision that satisfy the conditions: forecast order decision id must be smaller than the parameter `REF` and the forecast order status must be in status deleted. 
 
 After a run is completed , variable @INO is getting set again by the initial value + the limit of the query for the loop to end where there is no more lines to delete. 
 Due to performance issues a limit `LIMIT 10000` is required on the querry since after every loop the changes are commited on the database. 
