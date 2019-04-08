@@ -51,11 +51,10 @@ SET @INO = 0;
     		FROM forecast_order_decisions fod
     		INNER JOIN automatic_supply_decisions_product_performance dpp on fod.id = dpp.`forecast_order_decision_id`
     		WHERE fod.id <= REF
-    		AND fod.status = 'deleted' 
-    		ORDER BY fod.id)
+    		AND fod.status = 'deleted')
 			sel ON dpp.forecast_order_decision_id = sel.id
 			LIMIT LIM;
-			@INC = @INO + LIM;
+			@INO = @INO + LIM;
 			
 	END WHILE;
 	
