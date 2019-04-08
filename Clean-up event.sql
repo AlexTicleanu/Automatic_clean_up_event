@@ -34,7 +34,7 @@ END//
 
 
 DELIMITER //
-CREATE PROCEDURE schedule_delete_dpp(IN REF INT,IN LIM INT)
+CREATE PROCEDURE schedule_delete_dpp(IN REF INT)
 BEGIN
 
 SET @dt = (SELECT COUNT(dpp.id) FROM automatic_supply_decisions_product_performance dpp
@@ -51,16 +51,18 @@ SET @INO = 0;
     		FROM forecast_order_decisions fod
     		INNER JOIN automatic_supply_decisions_product_performance dpp on fod.id = dpp.`forecast_order_decision_id`
     		WHERE fod.id <= REF
-    		AND fod.status = 'deleted')
-			sel ON dpp.forecast_order_decision_id = sel.id
-			LIMIT LIM;
-			@INO = @INO + LIM;
+    		AND fod.status = 'deleted'
+			LIMIT 10000)
+			sel ON dpp.forecast_order_decision_id = sel.id;
+			SET @INO = @INO + 10000;
 			
 	END WHILE;
 	
 	INSERT INTO event_log(`event_name`,`state`,`count_decisions`,`count_p_performance`,`start/end`)
 	VALUES ('automatic_clean_up','middle',NULL,(SELECT COUNT(id) from automatic_supply_decisions_product_performance),(SELECT NOW()));
-END//
+
+END
+//
 
 
 
@@ -87,7 +89,7 @@ SET @ref=(SELECT MAX(fod.id)+1 FROM forecast_order_decisions fod WHERE date(fod.
  
 #DELETE PRODUCT PERFORMANCE FOR DECISIONS
 
-CALL schedule_delete_dpp(@ref,100000);
+CALL schedule_delete_dpp(@ref);
 
 #DELETE DECISIONS
 						 
