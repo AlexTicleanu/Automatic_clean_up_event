@@ -135,7 +135,7 @@ INSERT INTO event_log(`event_name`,`state`,`count_decisions`,`count_p_performanc
 VALUES ('automatic_clean_up','start',(SELECT COUNT(id) from forecast_order_decisions),(SELECT COUNT(id) from automatic_supply_decisions_product_performance),(SELECT NOW()));
 
 #SET THE REFERENCE VARIABLE
-SET @ref=(SELECT MAX(fod.id)+1 FROM forecast_order_decisions fod WHERE date(fod.created) <= CURDATE()-5);
+SET @ref=(SELECT MAX(fod.id)+1 FROM forecast_order_decisions fod WHERE date(fod.created) <= date(CURDATE()-5));
 
  
 #DELETE PRODUCT PERFORMANCE FOR DECISIONS
