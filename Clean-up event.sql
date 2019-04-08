@@ -39,9 +39,8 @@ BEGIN
 
 SET @dt = (SELECT COUNT(dpp.id) FROM automatic_supply_decisions_product_performance dpp
 		INNER JOIN forecast_order_decisions fod on dpp.forecast_order_decision_id = fod.id
-		WHERE date(fod.created) <= curdate()-5
-		AND fod.status = 'deleted' 
-    	ORDER BY fod.id);
+		WHERE date(fod.created) <= date(curdate()-5)
+		AND fod.status = 'deleted');
 
 	WHILE @dt != 0
 			DO 
@@ -57,9 +56,8 @@ SET @dt = (SELECT COUNT(dpp.id) FROM automatic_supply_decisions_product_performa
 			sel ON dpp.forecast_order_decision_id = sel.id;
 			SET @dt = (SELECT COUNT(dpp.id) FROM automatic_supply_decisions_product_performance dpp
 				INNER JOIN forecast_order_decisions fod on dpp.forecast_order_decision_id = fod.id
-				WHERE date(fod.created) <= curdate()-5
-				AND fod.status = 'deleted' 
-    			ORDER BY fod.id);
+				WHERE date(fod.created) <= date(curdate()-5)
+				AND fod.status = 'deleted');
 	END WHILE;
 	
 	INSERT INTO event_log(`event_name`,`state`,`count_decisions`,`count_p_performance`,`start/end`)
