@@ -16,7 +16,7 @@ CREATE PROCEDURE schedule_delete_fod(IN REF INT)
 BEGIN 
 
 SET @ct = (select MIN(id) from forecast_order_decisions); 
-	WHILE (@ct+1) != REF   
+	WHILE (@ct+1) < REF   
 		DO 
 		DELETE FROM forecast_order_decisions
 		WHERE 
@@ -99,3 +99,4 @@ CALL schedule_delete_fod(@ref);
 SET foreign_key_checks = 1;
 END; 
 //
+DELIMITER ;
