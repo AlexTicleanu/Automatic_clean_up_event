@@ -45,11 +45,11 @@ BEGIN
 
 SET @dt = (SELECT COUNT(dpp.id) FROM automatic_supply_decisions_product_performance dpp
 		INNER JOIN forecast_order_decisions fod on dpp.forecast_order_decision_id = fod.id
-		WHERE date(fod.created) <= curdate()-5
-		AND fod.status = 'deleted' 
-    	ORDER BY fod.id);
+		WHERE date(fod.created) <= date(curdate()-5)
+		AND fod.status = 'deleted');
+SET @INO = 0; 
 
-	WHILE @dt != 0
+	WHILE @dt - @INO > 0 
 			DO 
 			DELETE dpp FROM automatic_supply_decisions_product_performance dpp
 			JOIN 
@@ -57,29 +57,27 @@ SET @dt = (SELECT COUNT(dpp.id) FROM automatic_supply_decisions_product_performa
     		FROM forecast_order_decisions fod
     		INNER JOIN automatic_supply_decisions_product_performance dpp on fod.id = dpp.`forecast_order_decision_id`
     		WHERE fod.id <= REF
-    		AND fod.status = 'deleted' 
-    		ORDER BY fod.id
+    		AND fod.status = 'deleted'
 			LIMIT 10000)
 			sel ON dpp.forecast_order_decision_id = sel.id;
-			SET @dt = (SELECT COUNT(dpp.id) FROM automatic_supply_decisions_product_performance dpp
-				INNER JOIN forecast_order_decisions fod on dpp.forecast_order_decision_id = fod.id
-				WHERE date(fod.created) <= curdate()-5
-				AND fod.status = 'deleted' 
-    			ORDER BY fod.id);
+			SET @INO = @INO + 10000;
+			
 	END WHILE;
 	
 	INSERT INTO event_log(`event_name`,`state`,`count_decisions`,`count_p_performance`,`start/end`)
 	VALUES ('automatic_clean_up','middle',NULL,(SELECT COUNT(id) from automatic_supply_decisions_product_performance),(SELECT NOW()));
-END//
+
+END
+//
 ```
 
 In this case the stored procedure is created with an INT parameter called `REF`. After the `Begin` keyword , a variable called `@dt` is set having the count of decisions product performance with a correspondent in forecast order decision that satisfy the conditions: status deleted and created date smaller than 5 days ago. 
 
-Deleting in batches inside a stored procedure is possible using a loop, in our case a while loop ,having the variable presented above `@dt` not equal to 0 (in that moment all decision product performances are deleted and the while must end). 
+Deleting in batches inside a stored procedure is possible using a loop, in our case a while loop ,having the difference variables presented above `@dt - @INO` not equal to 0 (in that moment all decision product performances are deleted and the while must end). 
 
-The main query inside the while loop is deleting all the product performance with an correspondent in forecast order decision that satisfy the conditions: forecast order decision id must be smaller than the parameter `REF` and the forecast order status must be deleted. 
+The main query inside the while loop is deleting all the product performance with an correspondent in forecast order decision that satisfy the conditions: forecast order decision id must be smaller than the parameter `REF` and the forecast order status must be in status deleted. 
 
-After a run is completed , variable @dt is getting set again by the initial 'set query' due to the changes processed after each delete and for the loop to end where there is no more lines to delete. 
+After a run is completed , variable @INO is getting set again by the initial value + the limit of the query for the loop to end where there is no more lines to delete. 
 Due to performance issues a limit `LIMIT 10000` is required on the querry since after every loop the changes are commited on the database. 
 
 When the process is getting out of the loop, an insert into log table will be triggered having  the product performance count and the timestamp of the moment when this procedure ends.  
@@ -93,7 +91,7 @@ CREATE PROCEDURE schedule_delete_fod(IN REF INT)
 BEGIN 
 
 SET @ct = (select MIN(id) from forecast_order_decisions); 
-	WHILE @ct != REF   
+	WHILE (@ct+1) != REF   
 		DO 
 		DELETE FROM forecast_order_decisions
 		WHERE 
@@ -105,12 +103,12 @@ SET @ct = (select MIN(id) from forecast_order_decisions);
 	END WHILE;
 	INSERT INTO event_log(`event_name`,`state`,`count_decisions`,`count_p_performance`,`start/end`) 
 	values ('automatic_clean_up','stop',(SELECT COUNT(id) from forecast_order_decisions),(SELECT COUNT(id) from automatic_supply_decisions_product_performance),(SELECT NOW()));
-END//
+END// 
 ```
 
 In this case the stored procedure is created with an INT parameter called REF. After the `Begin` keyword , a variable called `@ct` is set having the minimum forecast order decision id stored in it. 
 
-Deleting in batches inside a stored procedure is possible using a loop, in our case a while loop ,having the variable presented above `@ct` and the parameter `REF` with a comparison operator between them as a condition.  
+Deleting in batches inside a stored procedure is possible using a loop, in our case a while loop ,having the variable presented above `@ct` (+1 due to the fact that `REF` is maximum id satisfying the conditions +1) and the parameter `REF` with a comparison operator between them as a condition.  
     
 After condition in loop is not satisfied anymore, an insert into log table will be triggered having the forecast order decisions count, the product performance count and the timestamp of the moment when the event ends. 
     
