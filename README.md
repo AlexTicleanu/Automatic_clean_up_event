@@ -45,11 +45,11 @@ BEGIN
 
 SET @dt = (SELECT COUNT(dpp.id) FROM automatic_supply_decisions_product_performance dpp
 		INNER JOIN forecast_order_decisions fod on dpp.forecast_order_decision_id = fod.id
-		WHERE date(fod.created) <= curdate()-5
-		AND fod.status = 'deleted' 
-    	ORDER BY fod.id);
+		WHERE date(fod.created) <= date(curdate()-5)
+		AND fod.status = 'deleted');
+SET @INO = 0; 
 
-	WHILE @dt != 0
+	WHILE @dt - @INO > 0 
 			DO 
 			DELETE dpp FROM automatic_supply_decisions_product_performance dpp
 			JOIN 
@@ -57,20 +57,18 @@ SET @dt = (SELECT COUNT(dpp.id) FROM automatic_supply_decisions_product_performa
     		FROM forecast_order_decisions fod
     		INNER JOIN automatic_supply_decisions_product_performance dpp on fod.id = dpp.`forecast_order_decision_id`
     		WHERE fod.id <= REF
-    		AND fod.status = 'deleted' 
-    		ORDER BY fod.id
+    		AND fod.status = 'deleted'
 			LIMIT 10000)
 			sel ON dpp.forecast_order_decision_id = sel.id;
-			SET @dt = (SELECT COUNT(dpp.id) FROM automatic_supply_decisions_product_performance dpp
-				INNER JOIN forecast_order_decisions fod on dpp.forecast_order_decision_id = fod.id
-				WHERE date(fod.created) <= curdate()-5
-				AND fod.status = 'deleted' 
-    			ORDER BY fod.id);
+			SET @INO = @INO + 10000;
+			
 	END WHILE;
 	
 	INSERT INTO event_log(`event_name`,`state`,`count_decisions`,`count_p_performance`,`start/end`)
 	VALUES ('automatic_clean_up','middle',NULL,(SELECT COUNT(id) from automatic_supply_decisions_product_performance),(SELECT NOW()));
-END//
+
+END
+//
 ```
 
 In this case the stored procedure is created with an INT parameter called `REF`. After the `Begin` keyword , a variable called `@dt` is set having the count of decisions product performance with a correspondent in forecast order decision that satisfy the conditions: status deleted and created date smaller than 5 days ago. 
@@ -79,7 +77,7 @@ Deleting in batches inside a stored procedure is possible using a loop, in our c
 
 The main query inside the while loop is deleting all the product performance with an correspondent in forecast order decision that satisfy the conditions: forecast order decision id must be smaller than the parameter `REF` and the forecast order status must be deleted. 
 
-After a run is completed , variable @dt is getting set again by the initial 'set query' due to the changes processed after each delete and for the loop to end where there is no more lines to delete. 
+After a run is completed , variable @INO is getting set again by the initial value + the limit of the query for the loop to end where there is no more lines to delete. 
 Due to performance issues a limit `LIMIT 10000` is required on the querry since after every loop the changes are commited on the database. 
 
 When the process is getting out of the loop, an insert into log table will be triggered having  the product performance count and the timestamp of the moment when this procedure ends.  
