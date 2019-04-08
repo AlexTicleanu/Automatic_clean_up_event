@@ -91,7 +91,7 @@ CREATE PROCEDURE schedule_delete_fod(IN REF INT)
 BEGIN 
 
 SET @ct = (select MIN(id) from forecast_order_decisions); 
-	WHILE @ct != REF   
+	WHILE (@ct+1) != REF   
 		DO 
 		DELETE FROM forecast_order_decisions
 		WHERE 
@@ -103,12 +103,12 @@ SET @ct = (select MIN(id) from forecast_order_decisions);
 	END WHILE;
 	INSERT INTO event_log(`event_name`,`state`,`count_decisions`,`count_p_performance`,`start/end`) 
 	values ('automatic_clean_up','stop',(SELECT COUNT(id) from forecast_order_decisions),(SELECT COUNT(id) from automatic_supply_decisions_product_performance),(SELECT NOW()));
-END//
+END// 
 ```
 
 In this case the stored procedure is created with an INT parameter called REF. After the `Begin` keyword , a variable called `@ct` is set having the minimum forecast order decision id stored in it. 
 
-Deleting in batches inside a stored procedure is possible using a loop, in our case a while loop ,having the variable presented above `@ct` and the parameter `REF` with a comparison operator between them as a condition.  
+Deleting in batches inside a stored procedure is possible using a loop, in our case a while loop ,having the variable presented above `@ct` (+1 due to the fact that `REF` is maximum id satisfying the conditions +1) and the parameter `REF` with a comparison operator between them as a condition.  
     
 After condition in loop is not satisfied anymore, an insert into log table will be triggered having the forecast order decisions count, the product performance count and the timestamp of the moment when the event ends. 
     
