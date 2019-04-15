@@ -18,7 +18,7 @@ DROP PROCEDURE IF EXISTS schedule_delete_fod;
 CREATE PROCEDURE schedule_delete_fod(IN REF INT)
 BEGIN 
 
-SET @ct = (select MIN(id) from forecast_order_decisions); 
+SET @ct = (select MIN(id) from forecast_order_decisions where `status` = 'deleted'); 
 	WHILE (@ct+1) < REF   
 		DO 
 		DELETE FROM forecast_order_decisions
@@ -27,7 +27,7 @@ SET @ct = (select MIN(id) from forecast_order_decisions);
 		AND id < REF
 		ORDER BY id ASC 
 		LIMIT 10000;
-		SET @ct = (select MIN(id) from forecast_order_decisions);
+		SET @ct = (select MIN(id) from forecast_order_decisions where `status` = 'deleted');
 	END WHILE;
 	INSERT INTO event_log(`event_name`,`state`,`count_decisions`,`count_p_performance`,`start/end`) 
 	values ('automatic_clean_up','stop',(SELECT COUNT(id) from forecast_order_decisions),(SELECT COUNT(id) from automatic_supply_decisions_product_performance),(SELECT NOW()));
