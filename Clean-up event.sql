@@ -11,6 +11,60 @@ CREATE TABLE IF NOT EXISTS event_log(
 	PRIMARY KEY (`id`)
 );
 
+CREATE TABLE `emag_scm_dante`.`forecast_order_decisions_copy` (
+	`id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'The primary key',
+	`forecast_rule_id` INT(11) NULL DEFAULT NULL,
+	`product_id` INT(11) UNSIGNED NOT NULL COMMENT 'The product id, primary key',
+	`daily_average` DECIMAL(10,4) UNSIGNED NULL DEFAULT NULL COMMENT 'Daily average received from BI',
+	`last_acquisition_price` DECIMAL(10,2) UNSIGNED NULL DEFAULT NULL COMMENT 'Last acquisition price from the last NIR in SCM',
+	`stock` INT(10) UNSIGNED NULL DEFAULT NULL COMMENT 'The stock for this product, taken from SAP',
+	`stock_target` INT(10) UNSIGNED NULL DEFAULT NULL COMMENT 'Stock target that is defined in Forecast Rule',
+	`stock_min` INT(10) UNSIGNED NULL DEFAULT NULL COMMENT 'The minimum quantity of the product under which the supplying is triggered',
+	`stock_max` INT(10) UNSIGNED NULL DEFAULT NULL COMMENT 'The maximum quantity above which the supplying must not overcome',
+	`pm_ordered_quantity` SMALLINT(11) UNSIGNED NULL DEFAULT NULL COMMENT 'Existing quantity in EIS, for this product, ordered by PM',
+	`unconfirmed_quantity` SMALLINT(5) UNSIGNED NULL DEFAULT NULL COMMENT 'Unconfirmed and unexpired quantity',
+	`reserved_quantity` SMALLINT(11) UNSIGNED NULL DEFAULT NULL COMMENT 'Reserved quantity in EIS',
+	`resulted_quantity` SMALLINT(11) NULL DEFAULT NULL COMMENT 'The quantity needed for ordering to the supplier',
+	`initial_resulted_quantity` SMALLINT(11) NULL DEFAULT NULL COMMENT 'The initial quantity resulted after generating the proposal',
+	`supplier_id` INT(11) UNSIGNED NULL DEFAULT NULL COMMENT 'The supplier that gets the order',
+	`price` DECIMAL(11,2) NULL DEFAULT NULL COMMENT 'Offer price in aplication currency',
+	`price_in_supplier_currency` DECIMAL(11,2) NULL DEFAULT NULL COMMENT 'Offer price in supplier currency',
+	`currency_id` INT(11) UNSIGNED NULL DEFAULT NULL,
+	`supplier_order_line_id` INT(11) UNSIGNED NULL DEFAULT NULL COMMENT 'The line in the invoice of the supplie/* large SQL query (3.1 KiB), snipped at 2,000 characters' */
+INSERT INTO `emag_scm_dante`.`forecast_order_decisions_copy` (`id`, `forecast_rule_id`, `product_id`, `daily_average`, `last_acquisition_price`, `stock`, `stock_target`, `stock_min`, `stock_max`, `pm_ordered_quantity`, `unconfirmed_quantity`, `reserved_quantity`, `resulted_quantity`, `initial_resulted_quantity`, `supplier_id`, `price`, `price_in_supplier_currency`, `currency_id`, `supplier_order_line_id`, `message`, `error_id`, `status`, `reject_reason_id`, `user_id`, `stock_target_med_resulted_qty`, `created`, `modified`) SELECT `id`, `forecast_rule_id`, `product_id`, `daily_average`, `last_acquisition_price`, `stock`, `stock_target`, `stock_min`, `stock_max`, `pm_ordered_quantity`, `unconfirmed_quantity`, `reserved_quantity`, `resulted_quantity`, `initial_resulted_quantity`, `supplier_id`, `price`, `price_in_supplier_currency`, `currency_id`, `supplier_order_line_id`, `message`, `error_id`, `status`, `reject_reason_id`, `user_id`, `stock_target_med_resulted_qty`, `created`, `modified` FROM `forecast_order_decisions`;
+
+
+CREATE TABLE `emag_scm_dante`.`automatic_supply_proposed_products_copy` (
+	`id` INT(11) NOT NULL AUTO_INCREMENT,
+	`product_id` INT(10) UNSIGNED NULL DEFAULT NULL,
+	`forecast_rule_id` INT(10) UNSIGNED NULL DEFAULT NULL,
+	`supplier_id` INT(10) UNSIGNED NULL DEFAULT NULL COMMENT 'READONLY - Sync from SCM.Nom',
+	`warehouse_id` INT(10) UNSIGNED NULL DEFAULT NULL,
+	`day` DATE NOT NULL,
+	`best_supplier_offer_processed` TINYINT(1) NOT NULL DEFAULT '0',
+	`unreceived_quantity_processed` TINYINT(1) NOT NULL DEFAULT '0',
+	`dwh_processed` TINYINT(1) NOT NULL DEFAULT '0',
+	`stock_info_processed` TINYINT(1) NOT NULL DEFAULT '0',
+	`last_acquisition_price_processed` TINYINT(1) NULL DEFAULT '0',
+	`decision_processed` TINYINT(1) NOT NULL DEFAULT '0',
+	`created` DATETIME NULL DEFAULT NULL,
+	`modified` DATETIME NULL DEFAULT NULL,
+	PRIMARY KEY (`id`),
+	UNIQUE INDEX `uq_product_day_warehouse` (`product_id`, `day`, `warehouse_id`),
+	INDEX `IDX_63621BDE2ADD6D8C` (`supplier_id`),
+	INDEX `IDX_63621BDE5080ECDE` (`warehouse_id`),
+	INDEX `IDX_63621BDE938351EA` (`forecast_rule_id`),
+	INDEX `ix_product` (`product_id`),
+	INDEX `IDX_processed` (`best_supplier_offer_processed`, `unreceived_quantity_processed`, `dwh_processed`, `stock_info_processed`, `last_acquisition_price_processed`, `decision_processed`),
+	FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`),
+	FOREIGN KEY (`product_id`) REFERENCES `products` (`id`),
+	FOREIGN KEY (`forecast_rule_id`) REFERENCES `forecast_rules` (`id`)
+)
+ COLLATE 'utf8_unicode_ci' ENGINE=InnoDB ROW_FORMAT=Dynamic AUTO_INCREMENT=2875575;
+INSERT INTO `emag_scm_dante`.`automatic_supply_proposed_products_copy` (`id`, `product_id`, `forecast_rule_id`, `supplier_id`, `warehouse_id`, `day`, `best_supplier_offer_processed`, `unreceived_quantity_processed`, `dwh_processed`, `stock_info_processed`, `last_acquisition_price_processed`, `decision_processed`, `created`, `modified`) SELECT `id`, `product_id`, `forecast_rule_id`, `supplier_id`, `warehouse_id`, `day`, `best_supplier_offer_processed`, `unreceived_quantity_processed`, `dwh_processed`, `stock_info_processed`, `last_acquisition_price_processed`, `decision_processed`, `created`, `modified` FROM `automatic_supply_proposed_products`;
+
+
+
 #CREATE PROCEDURE FOD
 CREATE PROCEDURE schedule_delete_fod(IN REF INT)
 BEGIN 
@@ -95,6 +149,19 @@ CALL schedule_delete_dpp(@ref);
 						 
 CALL schedule_delete_fod(@ref);
 
+IF (SELECT COUNT(id) from automatic_supply_decisions_product_performance) > 0
+		 THEN DROP TABLE automatic_supply_proposed_products_copy; 
+	ELSE
+		INSERT INTO event_log (`event_name`) 
+		VALUES ('ERROR:EVENT DELETED ALL DPP')
+END IF; 
+
+IF (SELECT COUNT(id) from forecast_order_decisions) > 0
+		 THEN DROP TABLE forecast_order_decisions_copy; 
+	ELSE
+		INSERT INTO event_log (`event_name`) 
+		VALUES ('ERROR:EVENT DELETED ALL FOD')
+END IF; 
       
 SET foreign_key_checks = 1;
 END; 
