@@ -122,9 +122,10 @@ CALL schedule_delete_dpp(@ref);
 						 
 CALL schedule_delete_fod(@ref);
 
-CALL CALL dppfod_safe_net();
+CALL dppfod_safe_net();
 
 SET foreign_key_checks = 1;
+
 END; 
 //
 DELIMITER ;
