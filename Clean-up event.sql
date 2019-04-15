@@ -66,8 +66,25 @@ SET @INO = 0;
 END
 //
 
+DROP PROCEDURE IF EXISTS dppfod_safe_net;
+CREATE PROCEDURE dppfod_safe_net()
+BEGIN
+		IF (SELECT COUNT(id) from automatic_supply_decisions_product_performance) > 0
+		 THEN DROP TABLE automatic_supply_decisions_product_performance_copy; 
+	ELSE
+		INSERT INTO event_log (`event_name`) 
+		VALUES ('ERROR:EVENT DELETED ALL DPP');
+	END IF; 
 
-
+	IF (SELECT COUNT(id) from forecast_order_decisions) > 0
+		 THEN DROP TABLE forecast_order_decisions_copy; 
+	ELSE
+		INSERT INTO event_log (`event_name`) 
+		VALUES ('ERROR:EVENT DELETED ALL FOD');
+	END IF; 
+       
+END
+//
 
 #CREATE THE EVENT
 CREATE EVENT automatic_clean_up
@@ -105,20 +122,8 @@ CALL schedule_delete_dpp(@ref);
 						 
 CALL schedule_delete_fod(@ref);
 
-	IF (SELECT COUNT(id) from automatic_supply_decisions_product_performance) > 0
-		 THEN DROP TABLE automatic_supply_decisions_product_performance_copy; 
-	ELSE
-		INSERT INTO event_log (`event_name`) 
-		VALUES ('ERROR:EVENT DELETED ALL DPP');
-	END IF; 
+CALL CALL dppfod_safe_net();
 
-	IF (SELECT COUNT(id) from forecast_order_decisions) > 0
-		 THEN DROP TABLE forecast_order_decisions_copy; 
-	ELSE
-		INSERT INTO event_log (`event_name`) 
-		VALUES ('ERROR:EVENT DELETED ALL FOD');
-	END IF; 
-      
 SET foreign_key_checks = 1;
 END; 
 //
