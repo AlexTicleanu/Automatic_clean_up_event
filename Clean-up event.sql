@@ -106,7 +106,7 @@ CALL schedule_delete_dpp(@ref);
 CALL schedule_delete_fod(@ref);
 
 	IF (SELECT COUNT(id) from automatic_supply_decisions_product_performance) > 0
-		 THEN DROP TABLE automatic_supply_proposed_products_copy; 
+		 THEN DROP TABLE automatic_supply_decisions_product_performance_copy; 
 	ELSE
 		INSERT INTO event_log (`event_name`) 
 		VALUES ('ERROR:EVENT DELETED ALL DPP');
