@@ -86,7 +86,7 @@ INSERT INTO forecast_order_decisions_copy (`id`, `forecast_rule_id`, `product_id
 
 
 CREATE TABLE IF NOT EXISTS automatic_supply_decisions_product_performance_copy LIKE automatic_supply_decisions_product_performance;
-INSERT INTO automatic_supply_decisions_product_performance_copy (`id`, `product_id`, `forecast_rule_id`, `supplier_id`, `warehouse_id`, `day`, `best_supplier_offer_processed`, `unreceived_quantity_processed`, `dwh_processed`, `stock_info_processed`, `last_acquisition_price_processed`, `decision_processed`, `created`, `modified`) SELECT `id`, `product_id`, `forecast_rule_id`, `supplier_id`, `warehouse_id`, `day`, `best_supplier_offer_processed`, `unreceived_quantity_processed`, `dwh_processed`, `stock_info_processed`, `last_acquisition_price_processed`, `decision_processed`, `created`, `modified` FROM `automatic_supply_proposed_products`;
+INSERT INTO automatic_supply_decisions_product_performance_copy (`id`, `forecast_order_decision_id`, `country_id`, `product_performance_id`) SELECT `id`, `forecast_order_decision_id`, `country_id`, `product_performance_id` FROM `automatic_supply_decisions_product_performance`;
 
 
 #INSERT IN ABOVE TABLE
