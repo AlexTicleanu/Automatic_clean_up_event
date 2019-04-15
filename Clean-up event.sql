@@ -10,20 +10,11 @@ CREATE TABLE IF NOT EXISTS event_log(
 	`start/end` TIMESTAMP NULL DEFAULT NULL,
 	PRIMARY KEY (`id`)
 );
-SET foreign_key_checks = 0;
 
-CREATE TABLE IF NOT EXISTS forecast_order_decisions_copy LIKE forecast_order_decisions ;
-INSERT INTO forecast_order_decisions_copy (`id`, `forecast_rule_id`, `product_id`, `daily_average`, `last_acquisition_price`, `stock`, `stock_target`, `stock_min`, `stock_max`, `pm_ordered_quantity`, `unconfirmed_quantity`, `reserved_quantity`, `resulted_quantity`, `initial_resulted_quantity`, `supplier_id`, `price`, `price_in_supplier_currency`, `currency_id`, `supplier_order_line_id`, `message`, `error_id`, `status`, `reject_reason_id`, `user_id`, `stock_target_med_resulted_qty`, `created`, `modified`) SELECT `id`, `forecast_rule_id`, `product_id`, `daily_average`, `last_acquisition_price`, `stock`, `stock_target`, `stock_min`, `stock_max`, `pm_ordered_quantity`, `unconfirmed_quantity`, `reserved_quantity`, `resulted_quantity`, `initial_resulted_quantity`, `supplier_id`, `price`, `price_in_supplier_currency`, `currency_id`, `supplier_order_line_id`, `message`, `error_id`, `status`, `reject_reason_id`, `user_id`, `stock_target_med_resulted_qty`, `created`, `modified` FROM `forecast_order_decisions`;
-
-
-CREATE TABLE IF NOT EXISTS automatic_supply_decisions_product_performance_copy LIKE automatic_supply_decisions_product_performance;
-INSERT INTO automatic_supply_decisions_product_performance_copy (`id`, `product_id`, `forecast_rule_id`, `supplier_id`, `warehouse_id`, `day`, `best_supplier_offer_processed`, `unreceived_quantity_processed`, `dwh_processed`, `stock_info_processed`, `last_acquisition_price_processed`, `decision_processed`, `created`, `modified`) SELECT `id`, `product_id`, `forecast_rule_id`, `supplier_id`, `warehouse_id`, `day`, `best_supplier_offer_processed`, `unreceived_quantity_processed`, `dwh_processed`, `stock_info_processed`, `last_acquisition_price_processed`, `decision_processed`, `created`, `modified` FROM `automatic_supply_proposed_products`;
-
-
-SET foreign_key_checks = 1;
 
 
 #CREATE PROCEDURE FOD
+DROP PROCEDURE IF EXISTS schedule_delete_fod;
 CREATE PROCEDURE schedule_delete_fod(IN REF INT)
 BEGIN 
 
@@ -44,8 +35,7 @@ END//
 
 #CREATE PROCEDURE DPP
 
-
-DELIMITER //
+DROP PROCEDURE IF EXISTS schedule_delete_dpp;
 CREATE PROCEDURE schedule_delete_dpp(IN REF INT)
 BEGIN
 
@@ -89,6 +79,14 @@ CREATE EVENT automatic_clean_up
 	DO BEGIN
 
 SET foreign_key_checks = 0;
+
+
+CREATE TABLE IF NOT EXISTS forecast_order_decisions_copy LIKE forecast_order_decisions ;
+INSERT INTO forecast_order_decisions_copy (`id`, `forecast_rule_id`, `product_id`, `daily_average`, `last_acquisition_price`, `stock`, `stock_target`, `stock_min`, `stock_max`, `pm_ordered_quantity`, `unconfirmed_quantity`, `reserved_quantity`, `resulted_quantity`, `initial_resulted_quantity`, `supplier_id`, `price`, `price_in_supplier_currency`, `currency_id`, `supplier_order_line_id`, `message`, `error_id`, `status`, `reject_reason_id`, `user_id`, `stock_target_med_resulted_qty`, `created`, `modified`) SELECT `id`, `forecast_rule_id`, `product_id`, `daily_average`, `last_acquisition_price`, `stock`, `stock_target`, `stock_min`, `stock_max`, `pm_ordered_quantity`, `unconfirmed_quantity`, `reserved_quantity`, `resulted_quantity`, `initial_resulted_quantity`, `supplier_id`, `price`, `price_in_supplier_currency`, `currency_id`, `supplier_order_line_id`, `message`, `error_id`, `status`, `reject_reason_id`, `user_id`, `stock_target_med_resulted_qty`, `created`, `modified` FROM `forecast_order_decisions`;
+
+
+CREATE TABLE IF NOT EXISTS automatic_supply_decisions_product_performance_copy LIKE automatic_supply_decisions_product_performance;
+INSERT INTO automatic_supply_decisions_product_performance_copy (`id`, `product_id`, `forecast_rule_id`, `supplier_id`, `warehouse_id`, `day`, `best_supplier_offer_processed`, `unreceived_quantity_processed`, `dwh_processed`, `stock_info_processed`, `last_acquisition_price_processed`, `decision_processed`, `created`, `modified`) SELECT `id`, `product_id`, `forecast_rule_id`, `supplier_id`, `warehouse_id`, `day`, `best_supplier_offer_processed`, `unreceived_quantity_processed`, `dwh_processed`, `stock_info_processed`, `last_acquisition_price_processed`, `decision_processed`, `created`, `modified` FROM `automatic_supply_proposed_products`;
 
 
 #INSERT IN ABOVE TABLE
