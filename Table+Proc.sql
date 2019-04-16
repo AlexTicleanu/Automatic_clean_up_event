@@ -18,7 +18,7 @@ DROP PROCEDURE IF EXISTS dppfod_safe_net;
 CREATE PROCEDURE dppfod_safe_net()
 BEGIN
 
-	IF (SELECT id from forecast_rules_1 LIMIT 1) IS NULL 
+	IF (SELECT id from forecast_order_decisions LIMIT 1) IS NULL 
 	THEN 
     		INSERT INTO event_log (`event_name`,`state`) 
 	 	VALUES ('ERROR:EVENT DELETED ALL FOD','error');
