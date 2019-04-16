@@ -5,7 +5,7 @@ DELIMITER //
 CREATE TABLE IF NOT EXISTS event_log(
 	`id` int(11) NOT NULL AUTO_INCREMENT,
 	`event_name` VARCHAR(128) NOT NULL,
-	`state` ENUM('start','middle','stop','successful','error') NOT NULL,
+	`state` ENUM('start','middle','stop','error') NOT NULL,
 	`count_decisions` int(11) DEFAULT NULL, 
 	`count_p_performance` int(11) DEFAULT NULL, 
 	`start/end` TIMESTAMP NULL DEFAULT NULL,
