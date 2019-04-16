@@ -17,25 +17,14 @@ CREATE TABLE IF NOT EXISTS event_log(
 DROP PROCEDURE IF EXISTS dppfod_safe_net;
 CREATE PROCEDURE dppfod_safe_net()
 BEGIN
-	IF (SELECT IF (EXISTS (SELECT id from automatic_supply_decisions_product_performance LIMIT 1), 1 , 0) = 1 )
-		 THEN 
-		 	INSERT INTO event_log (`event_name`,`state`) 
-			VALUES ('process successfully done','successful'); 
-	ELSE
-		INSERT INTO event_log (`event_name`) 
-		VALUES ('ERROR:EVENT DELETED ALL DPP','error');
-	END IF; 
 
-	IF (SELECT IF (EXISTS (SELECT id from forecast_order_decisions LIMIT 1), 1 , 0) > 0)
-		 THEN 
-		 	INSERT INTO event_log (`event_name`,`state`) 
-			VALUES ('process successfully done','successful'); 
-	ELSE
-		INSERT INTO event_log (`event_name`) 
-		VALUES ('ERROR:EVENT DELETED ALL FOD','error');
-	END IF; 
-       
-END//
+	IF (SELECT id from forecast_rules_1 LIMIT 1) IS NULL 
+	THEN 
+    		INSERT INTO event_log (`event_name`,`state`) 
+	 	VALUES ('ERROR:EVENT DELETED ALL FOD','error');
+	END IF;
+END
+//
 
 
 DROP PROCEDURE IF EXISTS schedule_delete_fod;
