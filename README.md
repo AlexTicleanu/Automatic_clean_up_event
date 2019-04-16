@@ -39,7 +39,7 @@ Stored procedure can be found in mysql database 'proc' table and called on deman
 **Decisions Product Performance Stored Procedure**
 
 ```sql
-DELIMITER //
+DROP PROCEDURE IF EXISTS schedule_delete_dpp;
 CREATE PROCEDURE schedule_delete_dpp(IN REF INT)
 BEGIN
 
@@ -87,23 +87,24 @@ When the process is getting out of the loop, an insert into log table will be tr
 **Forecast Order Decisions Stored Procedure**
 
 ```sql
+DROP PROCEDURE IF EXISTS schedule_delete_fod;
 CREATE PROCEDURE schedule_delete_fod(IN REF INT)
 BEGIN 
 
-SET @ct = (select MIN(id) from forecast_order_decisions); 
-	WHILE (@ct+1) != REF   
+SET @ct = (select MIN(id) from forecast_order_decisions where `status` = 'deleted'); 
+	WHILE (@ct+1) < REF   
 		DO 
 		DELETE FROM forecast_order_decisions
 		WHERE 
 		status = 'deleted'
-		AND id <= REF
+		AND id < REF
 		ORDER BY id ASC 
 		LIMIT 10000;
-		SET @ct = (select MIN(id) from forecast_order_decisions);
+		SET @ct = (select MIN(id) from forecast_order_decisions where `status` = 'deleted');
 	END WHILE;
 	INSERT INTO event_log(`event_name`,`state`,`count_decisions`,`count_p_performance`,`start/end`) 
 	values ('automatic_clean_up','stop',(SELECT COUNT(id) from forecast_order_decisions),(SELECT COUNT(id) from automatic_supply_decisions_product_performance),(SELECT NOW()));
-END// 
+END//
 ```
 
 In this case the stored procedure is created with an INT parameter called REF. After the `Begin` keyword , a variable called `@ct` is set having the minimum forecast order decision id stored in it. 
@@ -157,9 +158,33 @@ The insert in event_log will initiate the first count for forecast order decisio
  The next part in the event body is setting up the variable for later use in calling the stored procedures presented above. The `@ref` variable is set by the maximum id +1 from forecast order decisions that satisfies the requirement which the created date is smaller than 5 days ago.
  Now, both stored procedure can work with the same parameter so, calling the stored procedures having the `@ref` parameter will delete batch by batch all forecast order decisions and product performance correspondent from both tables. 
  
-  
-    
-    
+
+**Delete safety measure**
+
+```sql
+DROP PROCEDURE IF EXISTS dppfod_safe_net;
+CREATE PROCEDURE dppfod_safe_net()
+BEGIN
+	IF (SELECT IF (EXISTS (SELECT id from automatic_supply_decisions_product_performance LIMIT 1), 1 , 0) = 1 )
+		 THEN 
+		 	INSERT INTO event_log (`event_name`,`state`) 
+			VALUES ('process successfully done','successful'); 
+	ELSE
+		INSERT INTO event_log (`event_name`) 
+		VALUES ('ERROR:EVENT DELETED ALL DPP','error');
+	END IF; 
+
+	IF (SELECT IF (EXISTS (SELECT id from forecast_order_decisions LIMIT 1), 1 , 0) > 0)
+		 THEN 
+		 	INSERT INTO event_log (`event_name`,`state`) 
+			VALUES ('process successfully done','successful'); 
+	ELSE
+		INSERT INTO event_log (`event_name`) 
+		VALUES ('ERROR:EVENT DELETED ALL FOD','error');
+	END IF; 
+       
+END//    
+```    
 
 
 
