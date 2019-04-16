@@ -9,7 +9,7 @@ All parts of the Scheduled Event are presented below in the same order as create
 For a better tracking we use a new table (event_log) in which every run will have 3 rows containing:
     - an autoincrement id
     - event name
-    - status(start- moment and counts for the exact moment when event starts; middle- moment and counts for the event after deleting product performance; stop - moment and counts for the exact moment when event ends )
+    - status(start- moment and counts for the exact moment when event starts; middle- moment and counts for the event after deleting product performance; stop - moment and counts for the exact moment when event ends; error - for the error raised by the safety measure)
     - forecast order id count 
     - automatic supply decisions product performance 
     - a timestamp for each case 
@@ -20,12 +20,13 @@ For a better tracking we use a new table (event_log) in which every run will hav
 CREATE TABLE IF NOT EXISTS event_log(
 	`id` int(11) NOT NULL AUTO_INCREMENT,
 	`event_name` VARCHAR(128) NOT NULL,
-	`state` ENUM('start','middle','stop') NOT NULL,
+	`state` ENUM('start','middle','stop','error') NOT NULL,
 	`count_decisions` int(11) DEFAULT NULL, 
 	`count_p_performance` int(11) DEFAULT NULL, 
 	`start/end` TIMESTAMP NULL DEFAULT NULL,
 	PRIMARY KEY (`id`)
 );
+//
 ```
 
  
