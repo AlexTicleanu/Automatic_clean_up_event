@@ -52,7 +52,7 @@ BEGIN
 
 SET @dt = (SELECT COUNT(dpp.id) FROM automatic_supply_decisions_product_performance dpp
 		INNER JOIN forecast_order_decisions fod on dpp.forecast_order_decision_id = fod.id
-		WHERE date(fod.created) <= date(curdate()-5)
+		WHERE date(fod.created) <= date(DATE_SUB(NOW(),INTERVAL 5 DAY))
 		AND fod.status = 'deleted');
 SET @INO = 0; 
 
