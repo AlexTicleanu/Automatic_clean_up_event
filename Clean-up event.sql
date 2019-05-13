@@ -13,11 +13,11 @@ SET foreign_key_checks = 0;
 
 DROP TABLE IF EXISTS forecast_order_decisions_copy ; 
 CREATE TABLE IF NOT EXISTS forecast_order_decisions_copy LIKE forecast_order_decisions ;
-INSERT INTO forecast_order_decisions_copy (`id`, `forecast_rule_id`, `product_id`, `daily_average`, `last_acquisition_price`, `stock`, `stock_target`, `stock_min`, `stock_max`, `pm_ordered_quantity`, `unconfirmed_quantity`, `reserved_quantity`, `resulted_quantity`, `initial_resulted_quantity`, `supplier_id`, `price`, `price_in_supplier_currency`, `currency_id`, `supplier_order_line_id`, `message`, `error_id`, `status`, `reject_reason_id`, `user_id`, `stock_target_med_resulted_qty`, `created`, `modified`) SELECT `id`, `forecast_rule_id`, `product_id`, `daily_average`, `last_acquisition_price`, `stock`, `stock_target`, `stock_min`, `stock_max`, `pm_ordered_quantity`, `unconfirmed_quantity`, `reserved_quantity`, `resulted_quantity`, `initial_resulted_quantity`, `supplier_id`, `price`, `price_in_supplier_currency`, `currency_id`, `supplier_order_line_id`, `message`, `error_id`, `status`, `reject_reason_id`, `user_id`, `stock_target_med_resulted_qty`, `created`, `modified` FROM `forecast_order_decisions`;
+INSERT INTO forecast_order_decisions_copy SELECT * FROM `forecast_order_decisions`;
 
 DROP TABLE IF EXISTS automatic_supply_decisions_product_performance_copy; 
 CREATE TABLE IF NOT EXISTS automatic_supply_decisions_product_performance_copy LIKE automatic_supply_decisions_product_performance;
-INSERT INTO automatic_supply_decisions_product_performance_copy (`id`, `forecast_order_decision_id`, `country_id`, `product_performance_id`) SELECT `id`, `forecast_order_decision_id`, `country_id`, `product_performance_id` FROM `automatic_supply_decisions_product_performance`;
+INSERT INTO automatic_supply_decisions_product_performance_copy  SELECT * FROM `automatic_supply_decisions_product_performance`;
 
 
 #INSERT IN ABOVE TABLE
