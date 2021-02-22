@@ -11,6 +11,7 @@ CREATE EVENT automatic_clean_up
 
 SET foreign_key_checks = 0;
 
+CALL backup_tables_as();
 
 #INSERT IN ABOVE TABLE
 INSERT INTO event_log(`event_name`,`state`,`count_decisions`,`count_p_performance`,`start/end`)
