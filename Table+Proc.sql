@@ -123,7 +123,7 @@ END
 DELIMITER ;
 
 DELIMITER //
-create procedure backup_tables_as(IN REF int)
+create procedure backup_tables_as()
 BEGIN
 
 DROP TABLE IF EXISTS forecast_order_decisions_copy ;
