@@ -6,8 +6,8 @@ CREATE TABLE IF NOT EXISTS event_log(
 	`id` int(11) NOT NULL AUTO_INCREMENT,
 	`event_name` VARCHAR(128) NOT NULL,
 	`state` ENUM('start','middle','stop','error') NOT NULL,
-	`count_decisions` int(11) DEFAULT NULL,
-	`count_p_performance` int(11) DEFAULT NULL,
+	`table1_count` int(11) DEFAULT NULL,
+	`table2_count` int(11) DEFAULT NULL,
 	`start/end` TIMESTAMP NULL DEFAULT NULL,
 	PRIMARY KEY (`id`)
 );
@@ -16,16 +16,16 @@ DELIMITER ;
 
 
 DELIMITER //
-create procedure dppfod_safe_net()
+create procedure table2table1_safe_net()
 BEGIN
 
-    IF (SELECT id from forecast_order_decisions LIMIT 1) IS NULL
+    IF (SELECT id from table1 LIMIT 1) IS NULL
 
     THEN
 
             INSERT INTO event_log (`event_name`,`state`)
 
-        VALUES ('ERROR:EVENT DELETED ALL FOD','error');
+        VALUES ('ERROR:EVENT DELETED ALL table1','error');
 
     END IF;
 
@@ -35,16 +35,16 @@ DELIMITER ;
 
 
 DELIMITER //
-create procedure schedule_delete_dpp(IN REF int)
+create procedure schedule_delete_table2(IN REF int)
 BEGIN
 
-SET @dt = (SELECT COUNT(dpp.id) FROM automatic_supply_decisions_product_performance dpp
+SET @dt = (SELECT COUNT(table2.id) FROM table2 
 
-        INNER JOIN forecast_order_decisions fod on dpp.forecast_order_decision_id = fod.id
+        INNER JOIN table1  on table2.table1_data_relation_column = table1.id
 
-        WHERE date(fod.created) <= date(DATE_SUB(NOW(),INTERVAL 35 DAY))
+        WHERE date(table1.created) <= date(DATE_SUB(NOW(),INTERVAL 35 DAY))
 
-        AND fod.status = 'deleted');
+        AND table1.status = 'deleted');
 
 SET @INO = 0;
 
@@ -52,23 +52,23 @@ SET @INO = 0;
 
             DO
 
-            DELETE dpp FROM automatic_supply_decisions_product_performance dpp
+            DELETE table2 FROM table2 
 
             JOIN
 
-            (SELECT fod.id
+            (SELECT table1.id
 
-            FROM forecast_order_decisions fod
+            FROM table1 table1
 
-            INNER JOIN automatic_supply_decisions_product_performance dpp on fod.id = dpp.`forecast_order_decision_id`
+            INNER JOIN table2  on table1.id = table2.`table1_data_relation_column`
 
-            WHERE fod.id <= REF
+            WHERE table1.id <= REF
 
-            AND fod.status = 'deleted'
+            AND table1.status = 'deleted'
 
             LIMIT 10000)
 
-            sel ON dpp.forecast_order_decision_id = sel.id;
+            sel ON table2.table1_data_relation_column = sel.id;
 
             SET @INO = @INO + 10000;
 
@@ -78,9 +78,9 @@ SET @INO = 0;
 
 
 
-    INSERT INTO event_log(`event_name`,`state`,`count_decisions`,`count_p_performance`,`start/end`)
+    INSERT INTO event_log(`event_name`,`state`,`table1_count`,`table2_count`,`start/end`)
 
-    VALUES ('automatic_clean_up','middle',NULL,(SELECT COUNT(id) from automatic_supply_decisions_product_performance),(SELECT NOW()));
+    VALUES ('clean_up','middle',NULL,(SELECT COUNT(id) from table2),(SELECT NOW()));
 
 END
 //
@@ -89,16 +89,16 @@ DELIMITER ;
 
 
 DELIMITER //
-create procedure schedule_delete_fod(IN REF int)
+create procedure schedule_delete_table1(IN REF int)
 BEGIN
 
-SET @ct = (select MIN(id) from forecast_order_decisions where `status` = 'deleted');
+SET @ct = (select MIN(id) from table1 where `status` = 'deleted');
 
     WHILE (@ct+1) < REF
 
         DO
 
-        DELETE FROM forecast_order_decisions
+        DELETE FROM table1
 
         WHERE
 
@@ -110,28 +110,28 @@ SET @ct = (select MIN(id) from forecast_order_decisions where `status` = 'delete
 
         LIMIT 10000;
 
-        SET @ct = (select MIN(id) from forecast_order_decisions where `status` = 'deleted');
+        SET @ct = (select MIN(id) from table1 where `status` = 'deleted');
 
     END WHILE;
 
-    INSERT INTO event_log(`event_name`,`state`,`count_decisions`,`count_p_performance`,`start/end`)
+    INSERT INTO event_log(`event_name`,`state`,`table1_count`,`table2_count`,`start/end`)
 
-    values ('automatic_clean_up','stop',(SELECT COUNT(id) from forecast_order_decisions),(SELECT COUNT(id) from automatic_supply_decisions_product_performance),(SELECT NOW()));
+    values ('clean_up','stop',(SELECT COUNT(id) from table1),(SELECT COUNT(id) from table2),(SELECT NOW()));
 
 END
 //
 DELIMITER ;
 
 DELIMITER //
-create procedure backup_tables_as()
+create procedure backup_tables_tb1_tb2()
 BEGIN
 
-DROP TABLE IF EXISTS forecast_order_decisions_copy ;
-CREATE TABLE IF NOT EXISTS forecast_order_decisions_copy LIKE forecast_order_decisions ;
-INSERT INTO forecast_order_decisions_copy SELECT * FROM `forecast_order_decisions`;
-DROP TABLE IF EXISTS automatic_supply_decisions_product_performance_copy;
-CREATE TABLE IF NOT EXISTS automatic_supply_decisions_product_performance_copy LIKE automatic_supply_decisions_product_performance;
-INSERT INTO automatic_supply_decisions_product_performance_copy  SELECT * FROM `automatic_supply_decisions_product_performance`;
+DROP TABLE IF EXISTS table1_copy ;
+CREATE TABLE IF NOT EXISTS table1_copy LIKE table1 ;
+INSERT INTO table1_copy SELECT * FROM `table1`;
+DROP TABLE IF EXISTS table2_copy;
+CREATE TABLE IF NOT EXISTS table2_copy LIKE table2;
+INSERT INTO table2_copy  SELECT * FROM `table2`;
 
 END //
 DELIMITER ;
