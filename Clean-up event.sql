@@ -1,30 +1,30 @@
 DELIMITER //
 
 #CREATE THE EVENT
-CREATE EVENT automatic_clean_up
+CREATE EVENT clean_up
     ON SCHEDULE
 	EVERY 1 DAY
    ON COMPLETION PRESERVE
 	DISABLE
-	COMMENT 'Clears out table.'
+	COMMENT 'Clears out table for data deleted and older than 5 days.'
 	DO BEGIN
 
 SET foreign_key_checks = 0;
 
-CALL backup_tables_as();
+CALL backup_tables_tb1_tb2();
 
 #INSERT IN ABOVE TABLE
-INSERT INTO event_log(`event_name`,`state`,`count_decisions`,`count_p_performance`,`start/end`)
-VALUES ('automatic_clean_up','start',(SELECT COUNT(id) from forecast_order_decisions),(SELECT COUNT(id) from automatic_supply_decisions_product_performance),(SELECT NOW()));
+INSERT INTO event_log(`event_name`,`state`,`count_table1`,`count_table2`,`start/end`)
+VALUES ('automatic_clean_up','start',(SELECT COUNT(id) from table1),(SELECT COUNT(id) from table2),(SELECT NOW()));
 #SET THE REFERENCE VARIABLE
-SET @ref=(SELECT MAX(fod.id)+1 FROM forecast_order_decisions fod WHERE date(fod.created) <= date(DATE_SUB(NOW(),INTERVAL 35 DAY)));
+SET @ref=(SELECT MAX(table1.id)+1 FROM table1 WHERE date(table1.created) <= date(DATE_SUB(NOW(),INTERVAL 35 DAY)));
 
-#DELETE PRODUCT PERFORMANCE FOR DECISIONS
-CALL schedule_delete_dpp(@ref);
-#DELETE DECISIONS
+#DELETE table2_data FOR table1_data
+CALL schedule_delete_table2(@ref);
 
-CALL schedule_delete_fod(@ref);
-CALL dppfod_safe_net();
+#DELETE table1_data
+CALL schedule_delete_table1(@ref);
+CALL table2table1_safe_net();
 SET foreign_key_checks = 1;
 END;
 //

@@ -146,12 +146,11 @@ END//
  **Create event clean_up**
  
  ```sql
- 
 DELIMITER //
 
 #CREATE THE EVENT
 CREATE EVENT clean_up
-    ON SCHEDULE 
+    ON SCHEDULE
 	EVERY 1 DAY
    ON COMPLETION PRESERVE
 	DISABLE
@@ -160,38 +159,25 @@ CREATE EVENT clean_up
 
 SET foreign_key_checks = 0;
 
-DROP TABLE IF EXISTS table1_copy ; 
-CREATE TABLE IF NOT EXISTS table1_copy LIKE table1 ;
-INSERT INTO table1_copy  SELECT * FROM `table1`;
-
-DROP TABLE IF EXISTS table2_copy; 
-CREATE TABLE IF NOT EXISTS table2_copy LIKE table2;
-INSERT INTO table2_copy SELECT * FROM `table2`;
-
+CALL backup_tables_tb1_tb2();
 
 #INSERT IN ABOVE TABLE
 INSERT INTO event_log(`event_name`,`state`,`count_table1`,`count_table2`,`start/end`)
-VALUES ('clean_up','start',(SELECT COUNT(id) from table1),(SELECT COUNT(id) from table2),(SELECT NOW()));
-
+VALUES ('automatic_clean_up','start',(SELECT COUNT(id) from table1),(SELECT COUNT(id) from table2),(SELECT NOW()));
 #SET THE REFERENCE VARIABLE
-SET @ref=(SELECT MAX(table1.id)+1 FROM table1 table1 WHERE date(table1.created) <= date(CURDATE()-5));
+SET @ref=(SELECT MAX(table1.id)+1 FROM table1 WHERE date(table1.created) <= date(DATE_SUB(NOW(),INTERVAL 35 DAY)));
 
- 
-#DELETE PRODUCT PERFORMANCE FOR DECISIONS
-
+#DELETE table2_data FOR table1_data
 CALL schedule_delete_table2(@ref);
 
-#DELETE DECISIONS
-						 
+#DELETE table1_data
 CALL schedule_delete_table1(@ref);
-
 CALL table2table1_safe_net();
-
 SET foreign_key_checks = 1;
-
-END; 
+END;
 //
 DELIMITER ;
+
  ```
  
  The Scheduled event is created by a small sequence of code containing the `Create event` statement followed by the desired name , in our case 'clean_up' , the `On Schedule` statement followed by the choosen schedule , the `ON COMPLETION` statement followed by `PRESERVE`/`DROP` according to requirements , `ENABLE` or `DIABLE` being the initial state in which the event will be created. 
